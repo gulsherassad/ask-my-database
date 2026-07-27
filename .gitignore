@@ -1,0 +1,9 @@
+venv/
+.env
+__pycache__/
+*.pyc
+.DS_Store
+
+# BIRD database files - too large for git
+mini_dev_data/
+*.sqlite
