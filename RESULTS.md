@@ -6,9 +6,17 @@ query is correct only if it runs, finishes within the timeout, and returns the s
 result set as the human-written gold query. Scored with BIRD's official
 `evaluation_ex.py`, not a custom comparison.
 
-Evaluation sample: first **50** questions of Mini-Dev
-(25 simple / 19 moderate / 6 challenging).
 Model: `claude-sonnet-5`. One API call per question at generation time.
+
+**Headline result: 64.20% EX on the full 500-question Mini-Dev set** (see
+"Full-set result" below). The stage-by-stage numbers in the next section were
+measured on a **50-question development sample** (the first 50 questions) — used as a
+fast, cheap signal to iterate against. The full set is the honest figure; the 50-question
+numbers show the *process* of how each change moved the needle, not the final score.
+
+Development sample: first **50** questions (25 simple / 19 moderate / 6 challenging).
+Small enough to iterate cheaply, but with real margin of error — especially the
+6-question challenging bucket, whose per-stage numbers are noise.
 
 ## Results at a glance
 
@@ -18,7 +26,32 @@ Model: `claude-sonnet-5`. One API call per question at generation time.
 | 1 | Prompt: resolve FKs to names, match exact values; fix markdown-fence bug | **76.00** | 92.00 | 57.89 | 66.67 |
 | 2 | Inject 3 sample rows per table into schema context | **74.00** | 84.00 | 68.42 | 50.00 |
 
-Stage 2 regressed overall and was **reverted**. Current system is Stage 1 (76%).
+Stage 2 regressed overall and was **reverted**. Current system is Stage 1.
+
+## Full-set result (the headline number)
+
+After locking in Stage 1 and reverting Stage 2, I ran the **full 500 questions** — the
+first time the system was scored on the entire benchmark rather than the 50-question
+development sample.
+
+| Metric | Value |
+|--------|:-----:|
+| **Total EX (500 questions)** | **64.20** |
+| Simple (148) | 76.35 |
+| Moderate (250) | 62.80 |
+| Challenging (102) | 50.00 |
+
+Two honest observations:
+
+- **The full-set number (64.20%) is lower than the 50-question figure (76%)**, and
+  that was expected. The first 50 questions lean on two of the easier databases; the
+  full set spans all 11, including harder schemas the system hadn't been developed
+  against. A defensible 64% on the whole benchmark is worth more than an optimistic 76%
+  on a favorable slice — so **64.20% is the number I quote.**
+- The per-difficulty numbers are now trustworthy (148 / 250 / 102 questions, not
+  6-question noise). Accuracy falls cleanly with difficulty — 76 → 63 → 50 — with no
+  odd inversions, which is what a sound pipeline should show. "Half of the *hardest*
+  questions answered correctly" is now a real, quotable result.
 
 > Caveat carried throughout: the challenging bucket is only 6 questions, so its
 > per-stage numbers are noise, not signal. Conclusions are drawn from the simple
