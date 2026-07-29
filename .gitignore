@@ -7,3 +7,6 @@ __pycache__/
 # BIRD database files - too large for git
 minidev/
 *.sqlite
+
+# Temp files from run_eval.py
+eval_tmp/

@@ -51,7 +51,7 @@ Question:
 
     response = client.messages.create(
         model="claude-sonnet-5",
-        max_tokens=1024,
+        max_tokens=8192,
         messages=[{"role": "user", "content": prompt}],
     )
 
