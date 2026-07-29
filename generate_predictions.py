@@ -32,65 +32,15 @@ def strip_markdown_fences(text: str) -> str:
     return stripped.strip()
 
 
-MAX_SAMPLE_ROWS = 3
-MAX_CELL_LEN = 50
-
-
-def truncate_cell(value) -> str:
-    """Render one cell for the sample preview, truncating long text and labeling NULLs."""
-    if value is None:
-        return "NULL"
-    text = str(value)
-    if len(text) > MAX_CELL_LEN:
-        text = text[:MAX_CELL_LEN] + "…"
-    return text
-
-
-def get_sample_rows(cursor: sqlite3.Cursor, table_name: str) -> str:
-    """Fetch up to MAX_SAMPLE_ROWS rows from a table as a compact "col | col" preview.
-
-    Returns "" if the table is empty or the query fails, so callers can skip it.
-    """
-    try:
-        cursor.execute(f'SELECT * FROM "{table_name}" LIMIT {MAX_SAMPLE_ROWS}')
-        rows = cursor.fetchall()
-    except sqlite3.Error:
-        return ""
-
-    if not rows:
-        return ""
-
-    columns = [col[0] for col in cursor.description]
-    lines = [" | ".join(columns)]
-    for row in rows:
-        lines.append(" | ".join(truncate_cell(value) for value in row))
-    return "\n".join(lines)
-
-
 def get_schema(db_id: str) -> str:
-    """Fetch each table's CREATE TABLE statement plus a few sample rows.
-
-    Sample rows let the model see the real stored format of values (date
-    formats, string casing, etc.) rather than guessing from column names alone.
-    """
+    """Fetch the CREATE TABLE statements for a database."""
     db_path = Path("minidev/MINIDEV/dev_databases") / db_id / f"{db_id}.sqlite"
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT name, sql FROM sqlite_master WHERE type = 'table'")
-    tables = cursor.fetchall()
-
-    schema_parts = []
-    for table_name, create_sql in tables:
-        if create_sql is None:
-            continue
-        part = create_sql
-        sample = get_sample_rows(cursor, table_name)
-        if sample:
-            part += f"\n-- Sample rows from {table_name}:\n{sample}"
-        schema_parts.append(part)
-
+    cursor.execute("SELECT sql FROM sqlite_master WHERE type = 'table'")
+    schema_rows = cursor.fetchall()
     conn.close()
-    return "\n\n".join(schema_parts)
+    return "\n\n".join(row[0] for row in schema_rows if row[0] is not None)
 
 
 def generate_sql(schema: str, evidence: str, question: str) -> str:
