@@ -13,13 +13,23 @@ load_dotenv()
 client = Anthropic()
 
 
+LEADING_FENCE_RE = re.compile(r"^```(?:sql)?\s*", re.IGNORECASE)
+TRAILING_FENCE_RE = re.compile(r"\s*```\s*$")
+
+
 def strip_markdown_fences(text: str) -> str:
-    """Strip a leading/trailing ```sql or ``` code fence, if present."""
+    """Strip a leading/trailing triple-backtick code fence (```sql or ```), if present.
+
+    The leading and trailing fence are stripped independently (not as a
+    matched pair), so this also handles a fence the model left unclosed.
+    Content may be on the same line as the backticks or on its own line,
+    with or without a language tag. Leaves the string unchanged (aside from
+    trimming) if there is no fence.
+    """
     stripped = text.strip()
-    match = re.match(r"^```(?:sql)?\s*\n(.*)\n```$", stripped, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return stripped
+    stripped = LEADING_FENCE_RE.sub("", stripped, count=1)
+    stripped = TRAILING_FENCE_RE.sub("", stripped, count=1)
+    return stripped.strip()
 
 
 def get_schema(db_id: str) -> str:
@@ -38,6 +48,16 @@ def generate_sql(schema: str, evidence: str, question: str) -> str:
     prompt = f"""You are given a SQLite database schema, some evidence (hints), and a question.
 Return ONLY a single SQLite query that answers the question. Do not include any
 explanation, markdown formatting, code fences, or anything other than the raw SQL query.
+
+When a column is a foreign key (e.g. a `..._id` or `link_to_...` column that references
+another table) and the question asks for a human-readable attribute (a name, title, or
+description) rather than an ID, JOIN to the referenced table and return that
+human-readable value instead of the raw ID.
+
+Match literal values from the question against the exact string as it is stored in the
+data — the question may phrase a value more briefly than the data does (e.g. the question
+says "Orange" but the column stores "Orange County"). Prefer the full/exact form as it
+would appear in the data; do not truncate or reformat values from the question.
 
 Schema:
 {schema}
