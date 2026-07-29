@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Querybird · Ask your database in plain English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M3 6.5C3 4.6 6.6 3 11 3s8 1.6 8 3.5v9c0 1.9-3.6 3.5-8 3.5s-8-1.6-8-3.5v-9Z" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M3 6.5C3 8.4 6.6 10 11 10s8-1.6 8-3.5M3 11c0 1.9 3.6 3.5 8 3.5s8-1.6 8-3.5" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+      </span>
+      <span class="brand-name">Querybird</span>
+    </div>
+    <div class="topbar-meta">
+      <span class="pill pill-readonly">read-only</span>
+      <a class="topbar-link" href="#" id="repo-link" target="_blank" rel="noopener">Source</a>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="hero">
+      <p class="eyebrow">natural language <span class="arrow">→</span> sql</p>
+      <h1 class="hero-title">Ask your database<br />in plain English.</h1>
+      <p class="hero-sub">
+        Type a question the way you'd say it out loud. Querybird writes the SQL,
+        runs it against the database, and shows you both — the query and the answer.
+      </p>
+    </section>
+
+    <section class="console" aria-label="Query console">
+      <!-- HUMAN SIDE -->
+      <div class="deck deck-human">
+        <div class="deck-head">
+          <span class="deck-index">01</span>
+          <span class="deck-label">Your question</span>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="db-select">Database</label>
+          <div class="select-wrap">
+            <select id="db-select" class="select"></select>
+            <svg class="select-caret" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="question">Question</label>
+          <textarea id="question" class="question" rows="3" placeholder="e.g. How many customers pay in EUR?"></textarea>
+        </div>
+
+        <div class="chips" id="chips" aria-label="Example questions"></div>
+
+        <button id="run" class="run">
+          <span class="run-label">Run query</span>
+          <span class="run-kbd">↵</span>
+        </button>
+      </div>
+
+      <!-- MACHINE SIDE -->
+      <div class="deck deck-machine" id="machine">
+        <div class="deck-head">
+          <span class="deck-index">02</span>
+          <span class="deck-label">Generated SQL</span>
+          <button class="copy" id="copy-sql" hidden>copy</button>
+        </div>
+
+        <div class="sql-frame">
+          <pre class="sql" id="sql"><code class="sql-placeholder">— your query will appear here</code></pre>
+        </div>
+
+        <div class="result-head">
+          <span class="deck-label">Result</span>
+          <span class="result-meta" id="result-meta"></span>
+        </div>
+
+        <div class="result-frame" id="result-frame">
+          <div class="empty" id="empty-state">
+            Ask a question to see the query Querybird writes and the rows it returns.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="stat">
+        <span class="stat-value">64.2%</span>
+        <span class="stat-label">execution accuracy on the full BIRD&nbsp;Mini-Dev benchmark (500 questions)</span>
+      </div>
+      <p class="footer-note">
+        SELECT-only · queries run against read-only SQLite copies · powered by an LLM with schema-grounded prompting
+      </p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
