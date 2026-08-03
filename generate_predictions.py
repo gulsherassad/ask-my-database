@@ -9,7 +9,17 @@ from sql_generation import generate_sql, get_schema
 # Parse --limit so we can test on a handful of questions before scaling up
 parser = argparse.ArgumentParser(description="Generate a BIRD-style predictions.json file.")
 parser.add_argument("--limit", type=int, default=5, help="Number of questions to process (default: 5)")
+parser.add_argument(
+    "--few-shot",
+    action="store_true",
+    help="Retrieve 3 similar same-database questions and inject them into the prompt as worked examples.",
+)
 args = parser.parse_args()
+
+# Only import retrieval.py (which loads the embedding cache at import time) when
+# actually needed, so a plain run still works if the cache hasn't been built yet.
+if args.few_shot:
+    from retrieval import retrieve_examples
 
 # Load all questions and take the first --limit of them
 questions_path = Path("minidev/MINIDEV/mini_dev_sqlite.json")
@@ -45,7 +55,12 @@ for i, item in enumerate(questions):
         question = item["question"]
 
         schema = get_schema(db_id)
-        sql_query = generate_sql(schema, question, evidence=evidence)
+
+        # `i` is this question's own position — passing it as the query index is what
+        # makes retrieval's leave-one-out exclusion work correctly per question.
+        examples = retrieve_examples(i, k=3, same_db_only=True) if args.few_shot else None
+
+        sql_query = generate_sql(schema, question, evidence=evidence, examples=examples)
 
         # Flatten to a single line — the predictions file must not contain raw newlines
         sql_query = sql_query.replace("\n", " ")

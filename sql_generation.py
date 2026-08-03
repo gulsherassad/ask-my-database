@@ -52,13 +52,36 @@ def get_schema(db_id: str) -> str:
     return "\n\n".join(row[0] for row in schema_rows if row[0] is not None)
 
 
-def generate_sql(schema: str, question: str, evidence: str = "") -> str:
+def format_examples(examples: list[dict]) -> str:
+    """Render retrieved few-shot examples as a "Q / SQL" worked-examples block."""
+    blocks = [f"Q: {ex['question']}\nSQL: {ex['gold_sql']}" for ex in examples]
+    return "\n\n".join(blocks)
+
+
+def generate_sql(
+    schema: str,
+    question: str,
+    evidence: str = "",
+    examples: list[dict] | None = None,
+) -> str:
     """Ask Claude for a single raw SQLite query, with markdown fences stripped.
 
     `evidence` is the optional BIRD-style hint string used during batch
     generation; it's omitted (empty) for freeform questions asked through the
     live query API.
+
+    `examples`, if given, is a list of {"question", "gold_sql"} dicts (e.g.
+    from retrieval.retrieve_examples) injected as worked few-shot examples
+    right before the actual question. Omitted/None (the default) leaves the
+    prompt exactly as it was before few-shot support existed.
     """
+    examples_section = ""
+    if examples:
+        examples_section = (
+            "Here are examples of similar questions and their correct SQL:\n\n"
+            f"{format_examples(examples)}\n\n"
+        )
+
     prompt = f"""You are given a SQLite database schema, some evidence (hints), and a question.
 Return ONLY a single SQLite query that answers the question. Do not include any
 explanation, markdown formatting, code fences, or anything other than the raw SQL query.
@@ -79,7 +102,7 @@ Schema:
 Evidence:
 {evidence}
 
-Question:
+{examples_section}Question:
 {question}
 """
 
